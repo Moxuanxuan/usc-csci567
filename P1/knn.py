@@ -23,7 +23,13 @@ def compute_distances(Xtrain, X):
 	  point.
 	"""
 	#####################################################
-	#				 YOUR CODE HERE					                    #
+	num_train = len(Xtrain)
+	num_test = len(X)
+	dists = np.zeros((num_test, num_train))
+	for i in range(num_test):	
+		for j in range(num_train):
+				errarray = Xtrain[j] - X[i]
+				dists[i, j] = np.linalg.norm(errarray)
 	#####################################################		 
 	return dists
 
@@ -43,7 +49,15 @@ def predict_labels(k, ytrain, dists):
 	  test data, where y[i] is the predicted label for the test point X[i]. 
 	"""
 	#####################################################
-	#				 YOUR CODE HERE					                    #
+	sortarray = np.argpartition(dists, k-1, axis=1)[:,0:k]
+	[num_test, num_train] = dists.shape
+	ypred = np.zeros(num_test)
+	for i in range(num_test):
+		label = np.zeros(k)
+		for j in range(k):
+			label[j] = ytrain[sortarray[i, j]]
+		tu = sorted([(np.sum(label==i), i) for i in set(label)], key = lambda x:(x[0], -x[1]))[-1]
+		ypred[i] = tu[1]
 	#####################################################
 	return ypred
 
@@ -60,7 +74,12 @@ def compute_accuracy(y, ypred):
 	- acc: The accuracy of prediction (scalar).
 	"""
 	#####################################################
-	#				 YOUR CODE HERE					                    #
+	n = len(y)
+	count = 0
+	for i in range(n):
+		if y[i] == ypred[i]:
+			count = count+1
+	acc = count/n
 	#####################################################
 	return acc
 
@@ -83,7 +102,14 @@ def find_best_k(K, ytrain, dists, yval):
 	"""
 	
 	#####################################################
-	#				 YOUR CODE HERE					                    #
+	n = len(K)
+	validation_accuracy=np.zeros(n)
+	for i in range(n):
+		k=K[i]
+		ypred=predict_labels(k, ytrain, dists)
+		validation_accuracy[i]=compute_accuracy(yval, ypred)
+	index = np.argpartition(validation_accuracy, -1)[-1]
+	best_k = K[index]
 	#####################################################
 	return best_k, validation_accuracy
 

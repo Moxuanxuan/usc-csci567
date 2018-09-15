@@ -20,8 +20,8 @@ def linear_regression_noreg(X, y):
   - w: a numpy array of shape (D, )
   """
   #####################################################
-  #				 YOUR CODE HERE					                    #
-  #####################################################		 
+  w = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
+  #####################################################	
   return w
 
 ###### Q4.2 ######
@@ -36,7 +36,10 @@ def regularized_linear_regression(X, y, lambd):
     - w: a numpy array of shape (D, )
     """
   #####################################################
-  #				 YOUR CODE HERE					                    #
+  x0 = X.T.dot(X)
+  [n, d] = np.shape(x0)
+  x1 = x0 + lambd * np.eye(n)
+  w = np.linalg.inv(x1).dot(X.T).dot(y)
   #####################################################		 
   return w
 
@@ -54,7 +57,20 @@ def tune_lambda(Xtrain, ytrain, Xval, yval, lambds):
     - bestlambda: the best lambda you find in lambds
     """
   #####################################################
-  #				 YOUR CODE HERE					                    #
+  least_err = 0
+  x0 = Xtrain.T.dot(Xtrain)
+  [n, d] = np.shape(x0)
+  for lambd in lambds:
+    x1 = x0 + lambd * np.eye(n)
+    w = np.linalg.inv(x1).dot(Xtrain.T).dot(ytrain)
+    err = np.linalg.norm(Xval.dot(w)-yval)
+    if least_err == 0:
+      least_err = err
+      bestlambda = lambd
+    else:
+      if err < least_err:
+        least_err = err
+        bestlambda = lambd
   #####################################################		 
   return bestlambda
 
@@ -69,6 +85,8 @@ def test_error(w, X, y):
     Returns:
     - err: the mean square error
     """
+    
+  err = np.square(np.linalg.norm(X.dot(w)-y))
   return err
 
 
