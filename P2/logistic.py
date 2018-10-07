@@ -38,11 +38,14 @@ def binary_train(X, y, w0=None, b0=None, step_size=0.5, max_iterations=1000):
     b = 0
     if b0 is not None:
         b = b0
+    
 
+    for i in range(max_iterations):
+        prob = sigmoid(X.dot(w.reshape(D,1))+b*np.ones((N,1))).flatten()-y
+        probvec = prob.reshape(1,N).dot(X).flatten()
+        w = w - step_size * probvec / N
+        b = b - step_size * prob.sum() / N
 
-    """
-    TODO: add your code here
-    """
 
     assert w.shape == (D,)
     return w, b
@@ -61,9 +64,14 @@ def binary_predict(X, w, b):
     preds = np.zeros(N) 
 
 
-    """
-    TODO: add your code here
-    """      
+    for i in range(N):
+        prey = w.dot(X[i,:])+b
+        if prey >= 0:
+            preds[i] = 1
+        else:
+            preds[i] = 0
+
+
     assert preds.shape == (N,) 
     return preds
 
@@ -108,10 +116,17 @@ def multinomial_train(X, y, C,
     if b0 is not None:
         b = b0
 
+    for n in range(max_iterations):
+        prob = np.exp(w.dot(X.T) + b.reshape(C,1).dot(np.ones((1,N))))
+        prob = prob/prob.sum(axis=0)
+        for i in range(N):
+            prob[y[i],i] = prob[y[i],i] - 1
+        bsum = prob.dot(np.ones((N,1))).flatten()
+        wsum = prob.dot(X)
+        w = w - step_size * wsum / N
+        b = b - step_size * bsum / N
 
-    """
-    TODO: add your code here
-    """
+    
 
     assert w.shape == (C, D)
     assert b.shape == (C,)
@@ -137,9 +152,11 @@ def multinomial_predict(X, w, b):
     C = w.shape[0]
     preds = np.zeros(N) 
 
-    """
-    TODO: add your code here
-    """   
+     
+    pred_mat = w.dot(X.T) + b.reshape(C,1).dot(np.ones(N).reshape(1,N))
+    for i in range(N):
+        preds[i] = np.argmax(pred_mat[:,i])
+
 
     assert preds.shape == (N,)
     return preds
@@ -176,9 +193,16 @@ def OVR_train(X, y, C, w0=None, b0=None, step_size=0.5, max_iterations=1000):
     if b0 is not None:
         b = b0
 
-    """
-    TODO: add your code here
-    """
+    for i in range(C):
+        newy = y.copy()
+        for j in range(N):
+            if newy[j] == i:
+                newy[j] = 1
+            else:
+                newy[j] = 0
+        w[i,:], b[i] = binary_train(X, newy)
+
+
     assert w.shape == (C, D), 'wrong shape of weights matrix'
     assert b.shape == (C,), 'wrong shape of bias terms vector'
     return w, b
@@ -204,10 +228,11 @@ def OVR_predict(X, w, b):
     C = w.shape[0]
     preds = np.zeros(N) 
     
-    """
-    TODO: add your code here
-    """
-
+    
+    pred_mat = w.dot(X.T) + b.reshape(C,1).dot(np.ones(N).reshape(1,N))
+    for i in range(N):
+        preds[i] = np.argmax(pred_mat[:,i])
+    
     assert preds.shape == (N,)
     return preds
 
