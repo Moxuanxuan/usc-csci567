@@ -15,7 +15,9 @@ def objective_function(X, y, w, lamb):
     - obj_value: the value of objective function in SVM primal formulation
     """
     # you need to fill in your solution here
-
+    N,D = X.shape
+    pre_vec = np.maximum(1 - np.multiply(X.dot(w), y.reshape(N,1)),0)
+    obj_value = lamb / 2 * (np.linalg.norm(w)**2) + pre_vec.sum() / N
 
     return obj_value
 
@@ -45,7 +47,15 @@ def pegasos_train(Xtrain, ytrain, w, lamb, k, max_iterations):
 
     for iter in range(1, max_iterations + 1):
         A_t = np.floor(np.random.rand(k) * N).astype(int)  # index of the current mini-batch
-
+        A_sub = Xtrain[A_t,:]
+        y_sub = ytrain[A_t]
+        pre_vec = (np.multiply(A_sub.dot(w),y_sub.reshape(k,1))<1).flatten()
+        A_sub = A_sub[pre_vec,:]
+        y_sub = y_sub[pre_vec]
+        n = y_sub.shape[0]
+        w_sub = (1-1/iter) * w + 1/(lamb*iter*k) * y_sub.reshape(1,n).dot(A_sub).T
+        w = np.minimum(1, 1/(lamb**0.5)/np.linalg.norm(w_sub)) * w_sub
+        train_obj.append(objective_function(Xtrain, ytrain, w, lamb))
         # you need to fill in your solution here
 
 
@@ -64,8 +74,11 @@ def pegasos_test(Xtest, ytest, w_l):
     - test_acc: testing accuracy.
     """
     # you need to fill in your solution here
-
-
+    Xtest = np.array(Xtest)
+    ytest = np.array(ytest)
+    N,D = Xtest.shape
+    pre_vec = np.multiply(Xtest.dot(w_l), ytest.reshape(N,1)) >= 0
+    test_acc = pre_vec.sum()/N
     return test_acc
 
 

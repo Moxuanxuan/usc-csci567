@@ -21,6 +21,13 @@ class DecisionStump(Classifier):
 		- the prediction (-1 or +1) for each example (in a list)
 		'''
 		##################################################
-		# TODO: implement "predict"
+		X = np.array(features)
+		N,D = X.shape
+		h = np.zeros((D,1))
+		h[self.d,] = 1
+		pred = (X.dot(h) > self.b) * self.s
+		pred[pred == 0] = -self.s
+		pred = pred.tolist()
+		return pred
 		##################################################
 		

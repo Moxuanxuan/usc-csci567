@@ -32,7 +32,13 @@ class Boosting(Classifier):
 		- the prediction (-1 or +1) for each example (in a list)
 		'''
 		########################################################
-		# TODO: implement "predict"
+		H = 0
+		for i in range(self.T):
+			H = H + self.betas[i]*self.clfs_picked[i].predict(features)
+		H[H>=0] = 1
+		H[H<0] = -1
+		H = H.flatten().tolist()
+		return H
 		########################################################
 		
 
@@ -52,7 +58,28 @@ class AdaBoost(Boosting):
 		- store what you learn in self.clfs_picked and self.betas
 		'''
 		############################################################
-		# TODO: implement "train"
+		X = np.array(features)
+		y = np.array(labels)
+		N = X.shape[0]
+		y = y.reshape(N,1)
+		D = np.ones((N,1))/N
+		for i in range(self.T):
+			m = 10
+			for clf in self.clfs:
+				pred_y = np.array(clf.predict(features))
+				m_sub = (y != pred_y).reshape(1, N).dot(D).flatten()
+				if m_sub < m:
+					m = m_sub
+					clf_min = clf
+			self.clfs_picked.append(clf_min)
+			e = m
+			beta = (1/2)*np.log((1-e)/e)
+			self.betas.append(beta)
+			pred_y = np.array(clf_min.predict(features))
+			D_pre = ((y == pred_y)*np.exp(-beta)).flatten()
+			D_pre[D_pre==0] = np.exp(beta)
+			D = np.multiply(D, D_pre.reshape(N,1))
+			D = D/D.sum()
 		############################################################
 		
 		
