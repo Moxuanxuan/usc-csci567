@@ -47,8 +47,16 @@ class GMM():
             # - compute variance and pi_k (see P4.pdf)
 
             # DONOT MODIFY CODE ABOVE THIS LINE
-            raise Exception(
-                'Implement initialization of variances, means, pi_k using k-means')
+            kinit = KMeans(n_cluster = self.n_cluster,e = self.e)
+            self.means, membership, number_of_updates = kinit.fit(x)
+            Nk = [np.sum(membership==j) for j in range(self.n_cluster)]
+            Nk = np.array(Nk)
+            self.pi_k = Nk/N
+            variances = np.zeros((self.n_cluster,D,D))
+            for i in range(self.n_cluster):
+                pre_var = x[(membership==i),:]-self.means[i,:]
+                variances[i,:,:] = np.dot(pre_var.T,pre_var)
+            self.variances = variances / Nk.reshape(self.n_cluster,1,1)
             # DONOT MODIFY CODE BELOW THIS LINE
 
         elif (self.init == 'random'):
@@ -58,8 +66,11 @@ class GMM():
             # - initialize variance to be identity and pi_k to be uniform
 
             # DONOT MODIFY CODE ABOVE THIS LINE
-            raise Exception(
-                'Implement initialization of variances, means, pi_k randomly')
+            self.pi_k = np.ones(self.n_cluster)/self.n_cluster
+            self.variances = np.zeros((self.n_cluster,D,D))
+            for i in range(self.n_cluster):
+                self.variances[i,:,:] = np.eye(D)
+            self.means = np.random.rand(self.n_cluster,D)
             # DONOT MODIFY CODE BELOW THIS LINE
 
         else:
@@ -72,7 +83,30 @@ class GMM():
         # - Return the number of E/M-Steps executed (Int) 
         # Hint: Try to separate E & M step for clarity
         # DONOT MODIFY CODE ABOVE THIS LINE
-        raise Exception('Implement fit function (filename: gmm.py)')
+        l = self.compute_log_likelihood(x)
+        # print(l)
+        # print(self.log_mat)
+        iterations = 0
+        for i in range(self.max_iter):
+            # print(self.log_mat)
+            r_mat = self.log_mat/np.sum(self.log_mat,axis=0).reshape(1,N)
+            # print(r_mat)
+            Nk = np.sum(r_mat, axis=1)
+            # print(Nk)
+            self.pi_k = Nk/N
+            self.means = np.dot(r_mat,x)/Nk.reshape(self.n_cluster,1)
+            variances = np.zeros((self.n_cluster,D,D))
+            for i in range(self.n_cluster):
+                pre_var = x-self.means[i,:]
+                variances[i,:,:] = np.dot(pre_var.T*r_mat[i,:],pre_var)
+            self.variances = variances / Nk.reshape(self.n_cluster,1,1)
+            lnew = self.compute_log_likelihood(x)
+            iterations = iterations + 1
+            if abs(l-lnew)<=self.e :
+                break
+            l = lnew
+            # print(l)
+        return iterations
         # DONOT MODIFY CODE BELOW THIS LINE
 
 		
@@ -95,7 +129,16 @@ class GMM():
         # - return the samples
 
         # DONOT MODIFY CODE ABOVE THIS LINE
-        raise Exception('Implement sample function in gmm.py')
+        D = self.means.shape[1]
+        samples = np.zeros((N,D))
+        rand_w = np.random.rand(N)
+        for i in range(N):
+            p_plus = 0
+            for j in range(self.n_cluster):
+                p_plus = p_plus + self.pi_k[j]
+                if rand_w[i]<=p_plus:
+                    break
+            samples[i,:] = np.random.multivariate_normal(self.means[j,:],self.variances[j,:,:])
         # DONOT MODIFY CODE BELOW THIS LINE
         return samples        
 
@@ -119,7 +162,16 @@ class GMM():
         # - return the log-likelihood (Float)
         # Note: you can call this function in fit function (if required)
         # DONOT MODIFY CODE ABOVE THIS LINE
-        raise Exception('Implement compute_log_likelihood function in gmm.py')
+        Gaussians = [self.Gaussian_pdf(means[i,:],variances[i,:,:]) for i in range(self.n_cluster)]
+        N,D = x.shape
+        log_mat = np.zeros((self.n_cluster, N))
+        for i in range(self.n_cluster):
+            for j in range(N):
+                log_mat[i,j] = Gaussians[i].getLikelihood(x[j,:])
+        log_mat = pi_k.reshape(self.n_cluster,1)*log_mat
+        self.log_mat = log_mat
+        log_likelihood = np.sum(np.log(np.sum(self.log_mat,axis=0)))
+        log_likelihood = float(log_likelihood)
         # DONOT MODIFY CODE BELOW THIS LINE
         return log_likelihood
 
@@ -142,7 +194,16 @@ class GMM():
             # - Set self.c equal to ((2pi)^D) * det(variance) (after ensuring the variance matrix is full rank)
             # Note you can call this class in compute_log_likelihood and fit
             # DONOT MODIFY CODE ABOVE THIS LINE
-            raise Exception('Impliment Guassian_pdf __init__')
+            D = self.variance.shape[0]
+            def invertible():
+                if np.linalg.det(self.variance)==0:
+                    self.variance = self.variance + 10**(-3)*np.eye(D)
+                    invertible()
+                else:
+                    return
+            invertible()
+            self.inv = np.linalg.inv(self.variance)
+            self.c = (2*np.pi)**D*np.linalg.det(self.variance)
             # DONOT MODIFY CODE BELOW THIS LINE
 
         def getLikelihood(self,x):
@@ -160,6 +221,6 @@ class GMM():
             # - Calculate the likelihood of sample x generated by this Gaussian
             # Note: use the described implementation of a Gaussian to ensure compatibility with the solutions
             # DONOT MODIFY CODE ABOVE THIS LINE
-            raise Exception('Impliment Guassian_pdf getLikelihood')
+            p = np.exp(-0.5*np.dot(np.dot((x-self.mean),self.inv),(x-self.mean).T))/np.sqrt(self.c)
             # DONOT MODIFY CODE BELOW THIS LINE
             return p

@@ -17,15 +17,15 @@ class KMeans():
         self.e = e
 
     def fit(self, x):
-       '''
-            Finds n_cluster in the data x
-            params:
-                x - N X D numpy array
-            returns:
-                A tuple
-                (centroids a n_cluster X D numpy array, y a size (N,) numpy array where cell i is the ith sample's assigned cluster, number_of_updates an Int)
-            Note: Number of iterations is the number of time you update the assignment
-        ''' 
+    #    '''
+    #         Finds n_cluster in the data x
+    #         params:
+    #             x - N X D numpy array
+    #         returns:
+    #             A tuple
+    #             (centroids a n_cluster X D numpy array, y a size (N,) numpy array where cell i is the ith sample's assigned cluster, number_of_updates an Int)
+    #         Note: Number of iterations is the number of time you update the assignment
+    #     ''' 
         assert len(x.shape) == 2, "fit function takes 2-D numpy arrays as input"
         np.random.seed(42)
         N, D = x.shape
@@ -37,8 +37,24 @@ class KMeans():
         # - return (means, membership, number_of_updates)
 
         # DONOT CHANGE CODE ABOVE THIS LINE
-        raise Exception(
-            'Implement fit function in KMeans class (filename: kmeans.py)')
+        initrow = np.random.choice(N,self.n_cluster)
+        means = x[initrow,:]
+        J=10**10
+        number_of_updates = 0
+        for i in range(self.max_iter):
+            dists = -2*np.dot(x, means.T) + np.sum(np.square(means), axis = 1) + np.transpose([np.sum(np.square(x), axis = 1)])
+            membership = np.argmin(dists,axis=1)
+            number_of_updates = number_of_updates + 1
+            Jnew = np.sum(np.square(x-means[membership,:]))/N
+            if abs(J-Jnew) <= self.e:
+                break
+            J = Jnew
+            for j in range(self.n_cluster):
+                belong_vec = (membership == j)
+                if np.sum(belong_vec) == 0:
+                    continue
+                means[j,:] = np.sum(x[belong_vec,:],axis=0)/np.sum(belong_vec)
+        return (means, membership, number_of_updates)
         # DONOT CHANGE CODE BELOW THIS LINE
 
 class KMeansClassifier():
@@ -83,9 +99,33 @@ class KMeansClassifier():
         # - assign labels to centroid_labels
 
         # DONOT CHANGE CODE ABOVE THIS LINE
-        raise Exception(
-            'Implement fit function in KMeansClassifier class (filename: kmeans.py)')
-
+        initrow = np.random.choice(N,self.n_cluster)
+        means = x[initrow,:]
+        J=10**10
+        number_of_updates = 0
+        for i in range(self.max_iter):
+            dists = -2*np.dot(x, means.T) + np.sum(np.square(means), axis = 1) + np.transpose([np.sum(np.square(x), axis = 1)])
+            membership = np.argmin(dists,axis=1)
+            number_of_updates = number_of_updates + 1
+            Jnew = np.sum(np.square(x-means[membership,:]))/N
+            if abs(J-Jnew) <= self.e:
+                break
+            J = Jnew
+            for j in range(self.n_cluster):
+                belong_vec = (membership == j)
+                if np.sum(belong_vec) == 0:
+                    continue
+                means[j,:] = np.sum(x[belong_vec,:],axis=0)/np.sum(belong_vec)
+        centroids = means
+        centroid_labels = np.zeros(self.n_cluster)
+        for i in range(self.n_cluster):
+            belong_vec = (membership == i)
+            if np.sum(belong_vec) == 0:
+                centroid_labels[i] = 0
+                continue
+            labels = y[belong_vec]
+            tu=sorted([(np.sum(labels==j),j) for j in set(labels)],key = lambda x:(x[0], -x[1]))
+            centroid_labels[i] = tu[-1][1]
         # DONOT CHANGE CODE BELOW THIS LINE
 
         self.centroid_labels = centroid_labels
@@ -117,8 +157,10 @@ class KMeansClassifier():
         # - return labels
 
         # DONOT CHANGE CODE ABOVE THIS LINE
-        raise Exception(
-            'Implement predict function in KMeansClassifier class (filename: kmeans.py)')
+        labels = np.zeros(N)
+        dists = -2*np.dot(x, self.centroids.T) + np.sum(np.square(self.centroids), axis = 1) + np.transpose([np.sum(np.square(x), axis = 1)])
+        membership = np.argmin(dists,axis=1)
+        labels = self.centroid_labels[membership]
         # DONOT CHANGE CODE BELOW THIS LINE
         return labels
 

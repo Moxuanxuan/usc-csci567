@@ -31,8 +31,14 @@ def transform_image(image, code_vectors):
     # - implement the function
 
     # DONOT CHANGE CODE ABOVE THIS LINE
-    raise Exception(
-        'Implement transform_image function (filename:kmeansTest.py)')
+    flat_image = image.reshape(-1,3)
+    dists = -2*np.dot(flat_image, code_vectors.T) + np.sum(np.square(code_vectors), axis = 1) + np.transpose([np.sum(np.square(flat_image), axis = 1)])
+    membership = np.argmin(dists,axis=1)
+    N = flat_image.shape[0]
+    new_im = np.zeros((flat_image.shape))
+    for i in range(N):
+        new_im[i,:] = code_vectors[membership[i],:]
+    new_im = new_im.reshape(image.shape)
     # DONOT CHANGE CODE BELOW THIS LINE
     return new_im
 
