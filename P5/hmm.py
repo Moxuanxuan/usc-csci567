@@ -20,7 +20,11 @@ def forward(pi, A, B, O):
   N = len(O)
   alpha = np.zeros([S, N])
   ###################################################
-  # Q3.1 Edit here
+  alpha[:,0] = np.multiply(pi,B[:,O[0]])
+  for t in range(N):
+    if t == 0:
+      continue
+    alpha[:,t]=np.multiply(B[:,O[t]],np.dot(A.T,alpha[:,t-1]))
   ###################################################
 
   return alpha
@@ -43,7 +47,12 @@ def backward(pi, A, B, O):
   N = len(O)
   beta = np.zeros([S, N])
   ###################################################
-  # Q3.1 Edit here
+  beta[:,N-1] = beta[:,N-1]+1
+  for i in range(N):
+    if i == 0:
+      continue
+    t = N - 1 - i
+    beta[:,t] = np.dot(A,np.multiply(B[:,O[t+1]],beta[:,t+1]))
   ###################################################
   
   return beta
@@ -60,7 +69,7 @@ def seqprob_forward(alpha):
   """
   prob = 0
   ###################################################
-  # Q3.2 Edit here
+  prob = np.sum(alpha[:,-1])
   ###################################################
   
   return prob
@@ -82,7 +91,7 @@ def seqprob_backward(beta, pi, B, O):
   """
   prob = 0
   ###################################################
-  # Q3.2 Edit here
+  prob = np.sum(beta[:,0]*pi*B[:,O[0]])
   ###################################################
   
   return prob
@@ -102,7 +111,21 @@ def viterbi(pi, A, B, O):
   """
   path = []
   ###################################################
-  # Q3.3 Edit here
+  S = len(pi)
+  N = len(O)
+  delta = np.zeros([S,N])
+  deltaS = np.zeros([S,N])
+  delta[:,0] = np.multiply(pi,B[:,O[0]])
+  for t in range(N):
+    if t == 0:
+      continue
+    k = A.T*delta[:,t-1]
+    deltaS[:,t] = np.argmax(k,axis=1)
+    delta[:,t] = np.multiply(B[:,O[t]],np.amax(k,axis=1))
+  path.insert(0,np.argmax(delta[:,N-1]))
+  for i in range(N-1):
+    t = N-1-i
+    path.insert(0,int(deltaS[int(path[0]),t]))
   ###################################################
   
   return path
